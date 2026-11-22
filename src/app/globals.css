@@ -1,0 +1,219 @@
+@import "tailwindcss";
+
+/* Dark mode is driven by data-theme="dark" on <html> (set before paint in layout.tsx). */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/*
+ * Theme tokens — matched to the GrabChat AI extension (orange brand, warm neutrals).
+ * `slate`, `brand` and `emerald` are remapped to CSS variables so every existing
+ * utility (text-slate-900, bg-brand-50…) flips automatically in dark mode.
+ * `neutral` is left untouched for areas that stay dark in both themes (footer, hub).
+ */
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+
+  --color-surface: var(--surface);
+  --color-page: var(--page);
+
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+
+  --color-slate-50: var(--slate-50);
+  --color-slate-100: var(--slate-100);
+  --color-slate-200: var(--slate-200);
+  --color-slate-300: var(--slate-300);
+  --color-slate-400: var(--slate-400);
+  --color-slate-500: var(--slate-500);
+  --color-slate-600: var(--slate-600);
+  --color-slate-700: var(--slate-700);
+  --color-slate-800: var(--slate-800);
+  --color-slate-900: var(--slate-900);
+  --color-slate-950: var(--slate-950);
+
+  --color-emerald-50: var(--emerald-50);
+  --color-emerald-200: var(--emerald-200);
+  --color-emerald-700: var(--emerald-700);
+}
+
+:root {
+  color-scheme: light;
+  --page: #ffffff;
+  --surface: #ffffff;
+
+  --brand-50: #fff3ee;
+  --brand-100: #ffe4d9;
+  --brand-200: #ffc9b3;
+  --brand-300: #ffa883;
+  --brand-400: #ff8a5c;
+  --brand-500: #ff6b3f;
+  --brand-600: #f45a2d;
+  --brand-700: #cc4419;
+
+  --slate-50: #fafaf9;
+  --slate-100: #f4f4f3;
+  --slate-200: #e8e7e5;
+  --slate-300: #d6d4d1;
+  --slate-400: #a19e9a;
+  --slate-500: #75726e;
+  --slate-600: #57534f;
+  --slate-700: #44403c;
+  --slate-800: #2b2826;
+  --slate-900: #1b1a19;
+  --slate-950: #0f0e0d;
+
+  --emerald-50: #ecfdf5;
+  --emerald-200: #a7f3d0;
+  --emerald-700: #047857;
+
+  --grid-dot: #e8e7e5;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #0f0f11;
+  --surface: #161518;
+
+  --brand-50: #2a1710;
+  --brand-100: #3a1e13;
+  --brand-200: #5c2c19;
+  --brand-300: #ffa27d;
+  --brand-400: #ff8a5c;
+  --brand-500: #ff7a4d;
+  --brand-600: #ff6b3f;
+  --brand-700: #ff9a73;
+
+  --slate-50: #1a191c;
+  --slate-100: #222124;
+  --slate-200: #2d2c30;
+  --slate-300: #3b3a3f;
+  --slate-400: #6e6d73;
+  --slate-500: #929197;
+  --slate-600: #b3b2b8;
+  --slate-700: #cfced3;
+  --slate-800: #e2e1e5;
+  --slate-900: #f3f2f5;
+  --slate-950: #fafafa;
+
+  --emerald-50: #0f241b;
+  --emerald-200: #1f4a39;
+  --emerald-700: #5fd3a5;
+
+  --grid-dot: #222124;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--page);
+  color: var(--slate-900);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  transition: background-color 0.2s ease;
+}
+
+.text-gradient {
+  background-image: linear-gradient(120deg, #ff6b3f 10%, #ff9a3d 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bg-grid {
+  background-image: radial-gradient(var(--grid-dot) 1px, transparent 1px);
+  background-size: 22px 22px;
+}
+
+/* Long-form content: legal pages and docs */
+.rich h2 {
+  @apply mt-10 mb-3 scroll-mt-24 text-xl font-semibold text-slate-900;
+}
+.rich h3 {
+  @apply mt-6 mb-2 text-base font-semibold text-slate-900;
+}
+.rich p {
+  @apply my-3 leading-7 text-slate-600;
+}
+.rich ul,
+.rich ol {
+  @apply my-3 space-y-1.5 pl-6 text-slate-600;
+}
+.rich ul {
+  @apply list-disc;
+}
+.rich ol {
+  @apply list-decimal;
+}
+.rich li {
+  @apply leading-7;
+}
+.rich a {
+  @apply font-medium text-brand-600 underline underline-offset-2 hover:text-brand-700;
+}
+.rich strong {
+  @apply font-semibold text-slate-800;
+}
+.rich code {
+  @apply rounded bg-slate-100 px-1.5 py-0.5 font-mono text-[0.85em] text-slate-800;
+}
+.rich kbd {
+  @apply rounded border border-slate-300 bg-surface px-1.5 py-0.5 font-mono text-xs text-slate-700 shadow-sm;
+}
+
+/* Markdown preview inside the free tools */
+.md-preview {
+  @apply text-sm leading-7 text-slate-700;
+}
+.md-preview h1 {
+  @apply mt-2 mb-3 text-2xl font-bold text-slate-900;
+}
+.md-preview h2 {
+  @apply mt-6 mb-2 text-xl font-semibold text-slate-900;
+}
+.md-preview h3 {
+  @apply mt-4 mb-2 text-base font-semibold text-slate-900;
+}
+.md-preview p {
+  @apply my-2;
+}
+.md-preview ul {
+  @apply my-2 list-disc pl-6;
+}
+.md-preview ol {
+  @apply my-2 list-decimal pl-6;
+}
+.md-preview a {
+  @apply text-brand-600 underline;
+}
+.md-preview blockquote {
+  @apply my-3 border-l-4 border-slate-200 pl-4 text-slate-500;
+}
+.md-preview code {
+  @apply rounded bg-slate-100 px-1 py-0.5 font-mono text-[0.85em];
+}
+.md-preview pre {
+  @apply my-3 overflow-x-auto rounded-lg bg-neutral-900 p-4 text-neutral-100;
+}
+.md-preview pre code {
+  @apply bg-transparent p-0 text-neutral-100;
+}
+.md-preview table {
+  @apply my-3 w-full border-collapse text-left;
+}
+.md-preview th,
+.md-preview td {
+  @apply border border-slate-200 px-3 py-1.5;
+}
+.md-preview th {
+  @apply bg-slate-50 font-semibold;
+}
+.md-preview hr {
+  @apply my-6 border-slate-200;
+}
