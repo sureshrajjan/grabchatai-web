@@ -34,17 +34,21 @@ Pages: `/`, `/pricing`, `/faq`, `/docs`, `/docs/[slug]`, `/features/[slug]` (Cha
 
 Pages Dodo's verification team looks for, all linked from the footer: Pricing (`/pricing`), Terms (`/terms`), Privacy (`/privacy`), Refund & Cancellation (`/refund-policy`), Contact (`/contact`).
 
-## Google sign-in
+## Sign-in (Clerk)
 
-Sign-in / sign-up uses Google OAuth (no auth library, no database): `src/lib/auth.ts` plus `src/app/api/auth/*`.
-The session is a signed httpOnly cookie that holds the Google profile.
+Sign-in and sign-up use [Clerk](https://dashboard.clerk.com) with Google as the social provider. The Clerk pieces are:
+`src/proxy.ts` (`clerkMiddleware`), `<ClerkProvider>` in `src/app/layout.tsx`, the pages
+`src/app/signin/[[...signin]]` and `src/app/signup/[[...signup]]`, and `currentUser()` in `/api/checkout`.
 
-1. Google Cloud Console → APIs & Services → OAuth consent screen (External, scopes `openid email profile`).
-2. Credentials → Create OAuth client ID → Web application. Authorized redirect URIs:
-   `http://localhost:3000/api/auth/google/callback` and `https://grabchatai.com/api/auth/google/callback`.
-3. Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `AUTH_SECRET` (`openssl rand -base64 32`).
+1. Clerk dashboard → your app → **API keys**: copy `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` and `CLERK_SECRET_KEY` into `.env.local`.
+2. **SSO connections** → Google. For production, use your own Google OAuth client and add Clerk's
+   *Authorized redirect URI* (shown in Clerk) in Google Cloud Console.
+3. **Paths**: sign-in URL `/signin`, sign-up URL `/signup` (also set in code). After sign-in/up users land on `/pricing`.
+4. Production: add the domain in Clerk (Domains) and use the `pk_live_` / `sk_live_` keys in Vercel.
 
-Flow: Sign in (`/signin` or `/signup`) → Google → back to `/pricing` → **Get Pro Yearly / Monthly** →
+Theme: Clerk's card uses the site's CSS variables (`src/components/auth/clerkAppearance.ts`), so it follows light/dark mode.
+
+Flow: Sign in (`/signin` or `/signup`, via Clerk) → Google → back to `/pricing` → **Get Pro Yearly / Monthly** →
 `POST /api/checkout` creates a Dodo subscription checkout for the signed-in email → Dodo payment page →
 `/checkout/success`. Pro buttons send signed-out visitors to sign in first.
 

@@ -1,16 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getDodoClient, getProductId, isPaidPlan } from "@/lib/dodo";
-import { SESSION_COOKIE, readSessionToken } from "@/lib/auth";
+import { currentUser } from "@clerk/nextjs/server";
 import { site } from "@/lib/site";
 
 /**
  * Creates a Dodo Payments subscription checkout session for the selected plan
- * and returns the hosted checkout URL. Requires a signed-in (Google) user, whose
+ * and returns the hosted checkout URL. Requires a signed-in Clerk user, whose
  * email and name are attached as the Dodo customer.
  */
 export async function POST(request: NextRequest) {
-  const user = readSessionToken(request.cookies.get(SESSION_COOKIE)?.value);
-  if (!user) {
+  const clerkUser = await currentUser();
+  const email = clerkUser?.primaryEmailAddress?.emailAddress;
+  if (!clerkUser || !email) {
     return NextResponse.json({ error: "Please sign in to upgrade.", code: "unauthenticated" }, { status: 401 });
   }
 
@@ -34,14 +35,15 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const name = clerkUser.fullName || clerkUser.firstName || email.split("@")[0];
   const returnUrl = process.env.DODO_PAYMENTS_RETURN_URL ?? `${site.url}/checkout/success`;
 
   try {
     const session = await getDodoClient().checkoutSessions.create({
       product_cart: [{ product_id: productId, quantity: 1 }],
-      customer: { email: user.email, name: user.name },
+      customer: { email, name },
       return_url: returnUrl,
-      metadata: { plan: body.plan, google_sub: user.sub, email: user.email },
+      metadata: { plan: body.plan, clerk_user_id: clerkUser.id, email },
     });
 
     if (!session.checkout_url) throw new Error("No checkout_url returned");

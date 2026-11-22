@@ -2,12 +2,11 @@
 
 import Link from "next/link";
 import { Avatar } from "@/components/auth/AccountMenu";
-import { GoogleLogo } from "@/components/ui/GoogleLogo";
-import { signInUrl, useSession } from "@/lib/useSession";
+import { signInUrl, useAccount } from "@/lib/useAccount";
 
-/** Shows who is signed in above the plans, or a Google sign-in prompt. */
+/** Shows who is signed in above the plans, or a sign-in prompt. */
 export function PricingAccountBar() {
-  const { status, user } = useSession();
+  const { status, user } = useAccount();
   if (status === "loading") return <div className="mb-10 h-[58px]" aria-hidden="true" />;
 
   return (
@@ -27,12 +26,11 @@ export function PricingAccountBar() {
         </>
       ) : (
         <>
-          <span className="text-slate-600">Sign in with Google to upgrade to Pro.</span>
+          <span className="text-slate-600">Sign in or create an account to upgrade to Pro.</span>
           <Link
             href={signInUrl("/pricing")}
             className="flex shrink-0 items-center gap-2 rounded-xl border border-slate-300 px-3.5 py-2 font-semibold text-slate-900 hover:bg-slate-50"
           >
-            <GoogleLogo className="h-4 w-4" />
             Sign in
           </Link>
         </>

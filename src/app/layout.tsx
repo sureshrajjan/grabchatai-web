@@ -5,6 +5,8 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { site } from "@/lib/site";
 import { themeScript } from "@/components/layout/ThemeToggle";
+import { ClerkProvider } from "@clerk/nextjs";
+import { clerkAppearance } from "@/components/auth/clerkAppearance";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -53,9 +55,18 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="flex min-h-full flex-col">
-        <SiteHeader />
-        <main className="flex-1">{children}</main>
-        <SiteFooter />
+        <ClerkProvider
+          appearance={clerkAppearance}
+          signInUrl="/signin"
+          signUpUrl="/signup"
+          signInFallbackRedirectUrl="/pricing"
+          signUpFallbackRedirectUrl="/pricing"
+          afterSignOutUrl="/"
+        >
+          <SiteHeader />
+          <main className="flex-1">{children}</main>
+          <SiteFooter />
+        </ClerkProvider>
       </body>
     </html>
   );

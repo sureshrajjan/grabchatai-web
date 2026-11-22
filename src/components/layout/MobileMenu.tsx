@@ -8,12 +8,14 @@ import { ChromeLogo } from "@/components/ui/brand-logos";
 import { mainNav, site } from "@/lib/site";
 import { tools } from "@/lib/tools";
 import { ThemeToggle } from "./ThemeToggle";
-import { signInUrl, useSession } from "@/lib/useSession";
+import { useClerk } from "@clerk/nextjs";
+import { signInUrl, useAccount } from "@/lib/useAccount";
 
 export function MobileMenu() {
   const [open, setOpen] = useState(false);
   const close = () => setOpen(false);
-  const { user } = useSession();
+  const { user } = useAccount();
+  const { signOut } = useClerk();
 
   return (
     <div className="lg:hidden">
@@ -45,10 +47,12 @@ export function MobileMenu() {
             ))}
             <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
               {user ? (
-                <form action="/api/auth/signout" method="post" className="min-w-0">
+                <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-slate-900">{user.name}</p>
-                  <button type="submit" className="text-xs font-medium text-slate-500 hover:text-slate-900">Sign out</button>
-                </form>
+                  <button type="button" onClick={() => signOut({ redirectUrl: "/" })} className="text-xs font-medium text-slate-500 hover:text-slate-900">
+                    Sign out
+                  </button>
+                </div>
               ) : (
                 <Link href={signInUrl()} onClick={close} className="text-sm font-semibold text-brand-600">
                   Sign in / Sign up

@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { buttonClass } from "@/components/ui";
-import { signInUrl, useSession, type ClientUser } from "@/lib/useSession";
+import { useClerk } from "@clerk/nextjs";
+import { signInUrl, useAccount, type ClientUser } from "@/lib/useAccount";
 
 export function Avatar({ user, size = 32 }: { user: ClientUser; size?: number }) {
   const [broken, setBroken] = useState(false);
@@ -33,7 +34,8 @@ export function Avatar({ user, size = 32 }: { user: ClientUser; size?: number })
 }
 
 export function AccountMenu() {
-  const { status, user } = useSession();
+  const { status, user } = useAccount();
+  const { signOut } = useClerk();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -90,11 +92,13 @@ export function AccountMenu() {
             Upgrade to Pro
             <span aria-hidden="true">↗</span>
           </Link>
-          <form action="/api/auth/signout" method="post" className="mt-1">
-            <button type="submit" role="menuitem" className="w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900">
-              Sign out
-            </button>
-          </form>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={() => signOut({ redirectUrl: "/" })}
+            className="mt-1 w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900">
+            Sign out
+          </button>
         </div>
       )}
     </div>

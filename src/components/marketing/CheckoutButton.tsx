@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { buttonClass } from "@/components/ui";
 import type { PlanId } from "@/lib/site";
-import { signInUrl, useSession } from "@/lib/useSession";
+import { signInUrl, useAccount } from "@/lib/useAccount";
 
 /**
- * Pro plan button. Signed out → Google sign-in (returns to /pricing).
+ * Pro plan button. Signed out → Clerk sign-in (returns to /pricing).
  * Signed in → creates a Dodo subscription checkout and redirects to the payment page.
  */
 export function CheckoutButton({
@@ -18,7 +18,7 @@ export function CheckoutButton({
   label: string;
   variant?: "primary" | "dark";
 }) {
-  const { status } = useSession();
+  const { status } = useAccount();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
