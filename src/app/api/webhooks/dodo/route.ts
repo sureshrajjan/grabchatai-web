@@ -1,4 +1,7 @@
 import { Webhook } from "standardwebhooks";
+import { getProductId } from "@/lib/dodo";
+import { emails, isEmailConfigured, sendEmail, type Email } from "@/lib/email";
+import { plans } from "@/lib/site";
 
 /**
  * Dodo Payments webhook endpoint.
@@ -6,8 +9,46 @@ import { Webhook } from "standardwebhooks";
  *   https://grabchatai.com/api/webhooks/dodo
  * and copy the signing secret into DODO_PAYMENTS_WEBHOOK_KEY.
  *
- * Fulfil orders here (not on the success-page redirect).
+ * Fulfil orders and send customer emails here (not on the success-page redirect).
  */
+
+type DodoEvent = {
+  type: string;
+  data: {
+    customer?: { email?: string; name?: string | null; customer_id?: string };
+    subscription_id?: string;
+    payment_id?: string;
+    product_id?: string;
+    next_billing_date?: string | null;
+    metadata?: Record<string, string>;
+  };
+};
+
+function planName(productId: string | undefined) {
+  if (productId && productId === getProductId("pro_yearly")) return plans.pro_yearly.name;
+  if (productId && productId === getProductId("pro_monthly")) return plans.pro_monthly.name;
+  return "Pro";
+}
+
+/** The customer email to send for this event, if any. Dodo already sends payment receipts. */
+function emailFor(event: DodoEvent): Email | null {
+  const { customer } = event.data;
+  if (!customer?.email) return null;
+  const c = { email: customer.email, name: customer.name };
+
+  switch (event.type) {
+    case "subscription.active":
+      return emails.proWelcome(c, planName(event.data.product_id), event.data.next_billing_date);
+    case "subscription.cancelled":
+      return emails.proCancelled(c);
+    case "subscription.on_hold":
+    case "subscription.failed":
+      return emails.paymentProblem(c);
+    default:
+      return null;
+  }
+}
+
 export async function POST(request: Request) {
   const secret = process.env.DODO_PAYMENTS_WEBHOOK_KEY;
   if (!secret) {
@@ -29,17 +70,7 @@ export async function POST(request: Request) {
     return new Response("Invalid signature", { status: 401 });
   }
 
-  const event = JSON.parse(rawBody) as {
-    type: string;
-    data: {
-      customer?: { email?: string; customer_id?: string };
-      subscription_id?: string;
-      payment_id?: string;
-      product_id?: string;
-      metadata?: Record<string, string>;
-    };
-  };
-
+  const event = JSON.parse(rawBody) as DodoEvent;
   const email = event.data.customer?.email;
 
   // TODO: connect these to your license store (database / KV) so the
@@ -66,6 +97,23 @@ export async function POST(request: Request) {
       break;
   }
 
-  // Respond quickly with 2xx so Dodo doesn't retry.
+  const message = emailFor(event);
+  if (message) {
+    if (!isEmailConfigured()) {
+      console.warn("[dodo-webhook] RESEND_API_KEY / EMAIL_FROM not set — skipping email", { type: event.type });
+    } else {
+      try {
+        // webhook-id is stable across Dodo's retries, so Resend sends at most one email per event.
+        const id = await sendEmail(message, `dodo-${headers["webhook-id"]}`);
+        console.info("[dodo-webhook] email sent", { type: event.type, resendId: id });
+      } catch (err) {
+        console.error("[dodo-webhook] email failed", { type: event.type, err });
+        // Non-2xx makes Dodo retry this event later.
+        return new Response("Email delivery failed", { status: 500 });
+      }
+    }
+  }
+
+  // Respond with 2xx so Dodo doesn't retry.
   return Response.json({ received: true });
 }
