@@ -16,8 +16,8 @@ export function getDodoClient() {
 /** Map each paid plan to the product ID created in the Dodo Payments dashboard. */
 export function getProductId(plan: PaidPlan): string | undefined {
   const map: Record<PaidPlan, string | undefined> = {
-    pro_monthly: process.env.DODO_PRODUCT_PRO_MONTHLY,
-    pro_yearly: process.env.DODO_PRODUCT_PRO_YEARLY,
+    pro_monthly: process.env.DODO_PAYMENTS_PRODUCT_ID_MONTHLY ?? process.env.DODO_PRODUCT_PRO_MONTHLY,
+    pro_yearly: process.env.DODO_PAYMENTS_PRODUCT_ID_YEARLY ?? process.env.DODO_PRODUCT_PRO_YEARLY,
   };
   return map[plan];
 }
