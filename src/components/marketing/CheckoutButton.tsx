@@ -4,6 +4,7 @@ import { useState } from "react";
 import { buttonClass } from "@/components/ui";
 import type { PlanId } from "@/lib/site";
 import { signInUrl, useAccount } from "@/lib/useAccount";
+import posthog from "posthog-js";
 
 /**
  * Pro plan button. Signed out → Clerk sign-in (returns to /pricing).
@@ -41,8 +42,10 @@ export function CheckoutButton({
         return;
       }
       if (!res.ok || !data.checkoutUrl) throw new Error(data.error ?? "Unable to start checkout.");
+      posthog.capture("checkout_started", { plan });
       window.location.href = data.checkoutUrl;
     } catch (e) {
+      posthog.capture("checkout_start_failed", { plan });
       setError(e instanceof Error ? e.message : "Unable to start checkout.");
       setLoading(false);
     }
