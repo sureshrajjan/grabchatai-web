@@ -1,6 +1,9 @@
+"use client";
+
 import { Icon } from "@/components/ui/icons";
 import { ChromeLogo } from "@/components/ui/brand-logos";
 import { site } from "@/lib/site";
+import posthog from "posthog-js";
 
 /** Large store-style install card (Chrome Web Store). */
 export function InstallButton({ dark = false }: { dark?: boolean }) {
@@ -9,6 +12,7 @@ export function InstallButton({ dark = false }: { dark?: boolean }) {
       href={site.chromeStoreUrl}
       target="_blank"
       rel="noopener noreferrer"
+      onClick={() => posthog.capture("extension_install_clicked")}
       className={`group inline-flex w-full max-w-sm items-center gap-4 rounded-2xl border p-4 text-left transition sm:w-auto sm:min-w-[22rem] ${
         dark
           ? "border-white/15 bg-white/5 hover:bg-white/10"

@@ -2,6 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getDodoClient, getProductId, isPaidPlan } from "@/lib/dodo";
 import { currentUser } from "@clerk/nextjs/server";
 import { site } from "@/lib/site";
+import { posthogCheckoutLogger, SeverityNumber } from "@/instrumentation";
 
 /**
  * Creates a Dodo Payments subscription checkout session for the selected plan
@@ -28,6 +29,11 @@ export async function POST(request: NextRequest) {
 
   const productId = getProductId(body.plan);
   if (!productId || !process.env.DODO_PAYMENTS_API_KEY) {
+    posthogCheckoutLogger?.emit({
+      body: "checkout unavailable",
+      severityNumber: SeverityNumber.WARN,
+      attributes: { event: "checkout.unavailable", plan: body.plan },
+    });
     console.error(`[checkout] Missing Dodo configuration for plan "${body.plan}"`);
     return NextResponse.json(
       { error: "Checkout is not available yet. Please try again later." },
@@ -47,8 +53,18 @@ export async function POST(request: NextRequest) {
     });
 
     if (!session.checkout_url) throw new Error("No checkout_url returned");
+    posthogCheckoutLogger?.emit({
+      body: "checkout session created",
+      severityNumber: SeverityNumber.INFO,
+      attributes: { event: "checkout.session_created", plan: body.plan },
+    });
     return NextResponse.json({ checkoutUrl: session.checkout_url });
   } catch (err) {
+    posthogCheckoutLogger?.emit({
+      body: "checkout session creation failed",
+      severityNumber: SeverityNumber.ERROR,
+      attributes: { event: "checkout.session_creation_failed", plan: body.plan },
+    });
     console.error("[checkout] Failed to create Dodo checkout session", err);
     return NextResponse.json(
       { error: "We couldn't start checkout. Please try again or contact support." },

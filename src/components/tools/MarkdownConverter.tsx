@@ -5,6 +5,7 @@ import { marked } from "marked";
 import { useMemo, useRef, useState } from "react";
 import { Button, cx } from "@/components/ui";
 import { Icon } from "@/components/ui/icons";
+import posthog from "posthog-js";
 
 const SAMPLE = `# Weekly AI research notes
 
@@ -60,10 +61,11 @@ export function MarkdownConverter({ mode }: { mode: Mode }) {
 
   const html = useMemo(() => sanitize(marked.parse(source, { async: false, gfm: true }) as string), [source]);
 
-  function loadFile(file: File) {
+  function loadFile(file: File, uploadMethod: "file_picker" | "drag_and_drop") {
     if (!/\.(md|markdown|txt)$/i.test(file.name)) return;
     setFileName(file.name.replace(/\.(md|markdown|txt)$/i, "") || "document");
     file.text().then(setSource);
+    posthog.capture("markdown_file_uploaded", { output_format: mode, upload_method: uploadMethod });
   }
 
   function fullDocument() {
@@ -71,6 +73,7 @@ export function MarkdownConverter({ mode }: { mode: Mode }) {
   }
 
   function downloadPdf() {
+    posthog.capture("document_export_requested", { output_format: "pdf" });
     // Render into a hidden iframe and open the browser's print dialog ("Save as PDF").
     const iframe = document.createElement("iframe");
     iframe.style.cssText = "position:fixed;right:0;bottom:0;width:0;height:0;border:0";
@@ -87,6 +90,7 @@ export function MarkdownConverter({ mode }: { mode: Mode }) {
   }
 
   function downloadWord() {
+    posthog.capture("document_export_requested", { output_format: "word" });
     // Word opens HTML saved with a .doc extension and the msword MIME type.
     const wordHtml = fullDocument().replace(
       "<html>",
@@ -111,7 +115,7 @@ export function MarkdownConverter({ mode }: { mode: Mode }) {
             type="file"
             accept=".md,.markdown,.txt,text/markdown,text/plain"
             className="hidden"
-            onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0])}
+            onChange={(e) => e.target.files?.[0] && loadFile(e.target.files[0], "file_picker")}
           />
           <Button variant="outline" size="sm" onClick={() => fileInput.current?.click()}>
             <Icon.Upload className="h-4 w-4" /> Upload .md
@@ -144,7 +148,7 @@ export function MarkdownConverter({ mode }: { mode: Mode }) {
             e.preventDefault();
             setDragging(false);
             const f = e.dataTransfer.files?.[0];
-            if (f) loadFile(f);
+            if (f) loadFile(f, "drag_and_drop");
           }}
         >
           <p className="border-b border-slate-100 px-4 py-2 text-xs font-semibold tracking-wider text-slate-400 uppercase">Markdown</p>
