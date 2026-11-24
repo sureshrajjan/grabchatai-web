@@ -1,6 +1,7 @@
 import { Webhook } from "standardwebhooks";
 import { getProductId } from "@/lib/dodo";
 import { emails, isEmailConfigured, sendEmail, type Email } from "@/lib/email";
+import { resolveClerkUserId, revokeForPayment, syncSubscription } from "@/lib/entitlement";
 import { plans } from "@/lib/site";
 
 /**
@@ -9,7 +10,7 @@ import { plans } from "@/lib/site";
  *   https://grabchatai.com/api/webhooks/dodo
  * and copy the signing secret into DODO_PAYMENTS_WEBHOOK_KEY.
  *
- * Fulfil orders and send customer emails here (not on the success-page redirect).
+ * Grants/removes Pro and sends customer emails here (never on the success-page redirect).
  */
 
 type DodoEvent = {
@@ -18,6 +19,7 @@ type DodoEvent = {
     customer?: { email?: string; name?: string | null; customer_id?: string };
     subscription_id?: string;
     payment_id?: string;
+    is_partial?: boolean;
     product_id?: string;
     next_billing_date?: string | null;
     metadata?: Record<string, string>;
@@ -73,28 +75,24 @@ export async function POST(request: Request) {
   const event = JSON.parse(rawBody) as DodoEvent;
   const email = event.data.customer?.email;
 
-  // TODO: connect these to your license store (database / KV) so the
-  // extension can check whether a user has Pro.
-  switch (event.type) {
-    case "payment.succeeded":
-      // First subscription payment and every successful charge.
-      console.info("[dodo-webhook] payment succeeded", { email, payment: event.data.payment_id });
-      break;
-    case "subscription.active":
-    case "subscription.renewed":
-      console.info("[dodo-webhook] grant/extend Pro", { email, subscription: event.data.subscription_id });
-      break;
-    case "subscription.cancelled":
-    case "subscription.expired":
-    case "subscription.failed":
-    case "subscription.on_hold":
-      console.info("[dodo-webhook] revoke Pro at period end", { email, type: event.type });
-      break;
-    case "refund.succeeded":
-      console.info("[dodo-webhook] refund — revoke Pro", { email, payment: event.data.payment_id });
-      break;
-    default:
-      break;
+  // Update the user's Pro entitlement (stored on their Clerk account).
+  try {
+    if (event.type.startsWith("subscription.") && event.data.subscription_id) {
+      const userId = await resolveClerkUserId(event.data.metadata, email);
+      if (userId && (await syncSubscription(userId, event.data.subscription_id))) {
+        console.info("[dodo-webhook] entitlement updated", { type: event.type, userId, subscription: event.data.subscription_id });
+      } else {
+        // Nothing to retry: no matching account. getEntitlement() picks it up by email after sign-up.
+        console.warn("[dodo-webhook] no Clerk user for subscription", { type: event.type, userId, email });
+      }
+    } else if (event.type === "refund.succeeded" && event.data.payment_id && !event.data.is_partial) {
+      const userId = await revokeForPayment(event.data.payment_id);
+      console.info("[dodo-webhook] refund — Pro revoked", { payment: event.data.payment_id, userId });
+    }
+  } catch (err) {
+    console.error("[dodo-webhook] entitlement update failed", { type: event.type, err });
+    // Non-2xx makes Dodo retry this event later.
+    return new Response("Entitlement update failed", { status: 500 });
   }
 
   const message = emailFor(event);

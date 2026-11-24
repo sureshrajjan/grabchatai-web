@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getDodoClient, getProductId, isPaidPlan } from "@/lib/dodo";
 import { currentUser } from "@clerk/nextjs/server";
+import { getEntitlement } from "@/lib/entitlement";
 import { site } from "@/lib/site";
 
 /**
@@ -33,6 +34,19 @@ export async function POST(request: NextRequest) {
       { error: "Checkout is not available yet. Please try again later." },
       { status: 503 },
     );
+  }
+
+  // Don't sell a second subscription to someone who already has Pro.
+  try {
+    const current = await getEntitlement(clerkUser.id, { forceSync: true });
+    if (current.pro) {
+      return NextResponse.json(
+        { error: "You already have GrabChatAI Pro on this account.", code: "already_pro" },
+        { status: 409 },
+      );
+    }
+  } catch (err) {
+    console.error("[checkout] Entitlement check failed; continuing to checkout", err);
   }
 
   const name = clerkUser.fullName || clerkUser.firstName || email.split("@")[0];
