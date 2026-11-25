@@ -174,9 +174,17 @@ export async function syncAllFromDodo(userId: string, email: string | null, meta
   const client = getDodoClient();
   const found = new Map<string, Subscription>();
 
-  // Already-known subscriptions (covers an email change since purchase).
+  // Already-known subscriptions (covers an email change since purchase). One Dodo no
+  // longer has (e.g. a test-mode subscription after switching to live) is removed, so
+  // the stored copy can't keep granting Pro.
+  const gone: string[] = [];
   for (const id of Object.keys(meta.subscriptions ?? {})) {
-    found.set(id, await client.subscriptions.retrieve(id));
+    try {
+      found.set(id, await client.subscriptions.retrieve(id));
+    } catch (err) {
+      if (!isNotFound(err)) throw err;
+      gone.push(id);
+    }
   }
   if (email) {
     for await (const customer of client.customers.list({ email })) {
@@ -190,9 +198,14 @@ export async function syncAllFromDodo(userId: string, email: string | null, meta
 
   const subscriptions: Record<string, SubscriptionRecord> = {};
   for (const [id, sub] of found) subscriptions[id] = toRecord(sub, meta.subscriptions?.[id]?.revoked);
-  const next: DodoMetadata = { subscriptions, syncedAt: new Date().toISOString() };
-  await writeDodoMetadata(userId, next);
-  return { ...meta, ...next, subscriptions: { ...meta.subscriptions, ...subscriptions } };
+  const syncedAt = new Date().toISOString();
+  // Clerk deep-merges metadata; a null value deletes that key.
+  const removals = Object.fromEntries(gone.map((id) => [id, null]));
+  await (await clerkClient()).users.updateUserMetadata(userId, {
+    privateMetadata: { dodo: { subscriptions: { ...subscriptions, ...removals }, syncedAt } },
+  });
+  const kept = Object.fromEntries(Object.entries(meta.subscriptions ?? {}).filter(([id]) => !gone.includes(id)));
+  return { ...meta, syncedAt, subscriptions: { ...kept, ...subscriptions } };
 }
 
 /**
