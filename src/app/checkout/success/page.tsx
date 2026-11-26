@@ -11,8 +11,9 @@ export default function CheckoutSuccessPage() {
       <Icon.CheckCircle className="mx-auto h-14 w-14 text-emerald-500" />
       <h1 className="mt-6 text-3xl font-bold tracking-tight text-slate-900">Welcome to Pro!</h1>
       <p className="mx-auto mt-4 max-w-lg leading-7 text-slate-600">
-        Dodo Payments is confirming your payment. You’ll get a receipt by email in a few minutes. Open the {site.name}{" "}
-        extension → <strong>Settings → Account</strong> and sign in with the same email to activate Pro.
+        Dodo Payments is confirming your payment. You’ll get a receipt by email in a few minutes. Pro is linked to the
+        account you’re signed in with: the {site.name} extension picks it up automatically and shows a <strong>Pro</strong>{" "}
+        badge. If it still shows Free, click your profile picture in the extension and choose <strong>Check now</strong>.
       </p>
       <p className="mt-4 text-sm text-slate-500">
         No email? Check spam or contact{" "}

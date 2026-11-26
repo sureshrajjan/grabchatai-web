@@ -210,8 +210,9 @@ export const docs: Doc[] = [
       <>
         <h2>Activate Pro</h2>
         <p>
-          After purchase, open the extension → <strong>Settings → Account</strong> and sign in with the email you used
-          at checkout.
+          Pro is linked to the account you bought it with. Stay signed in to grabchatai.com in Chrome and the extension
+          turns on Pro automatically (look for the <strong>Pro</strong> badge in the popup). If it still shows Free,
+          click your profile picture in the extension and choose <strong>Sign in</strong> or <strong>Check now</strong>.
         </p>
         <h2>Manage or cancel</h2>
         <p>

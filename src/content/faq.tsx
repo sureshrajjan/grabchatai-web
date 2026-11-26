@@ -104,7 +104,7 @@ export const faqBilling: QA[] = [
   },
   {
     q: "How do I activate Pro after paying?",
-    a: "Open the GrabChatAI extension, go to Settings → Account and sign in with the email you used at checkout. Pro activates instantly.",
+    a: "Stay signed in to grabchatai.com in Chrome with the account you paid with. The GrabChatAI extension picks it up automatically and shows a Pro badge. If it still shows Free, click your profile picture in the extension and choose Sign in or Check now.",
   },
   {
     q: "Why is Pro paid?",

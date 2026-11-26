@@ -99,7 +99,7 @@ export const emails = {
       [
         greeting(c),
         `Thanks for upgrading — your <strong>${escapeHtml(planName)}</strong> subscription is now active.`,
-        `To unlock Pro, open the ${escapeHtml(site.name)} extension → <strong>Settings → Account</strong> and sign in with <strong>${escapeHtml(c.email)}</strong>.`,
+        `Pro is linked to your account <strong>${escapeHtml(c.email)}</strong>. Stay signed in to ${escapeHtml(site.domain)} in Chrome and the ${escapeHtml(site.name)} extension turns on Pro automatically. If it still shows Free, click your profile picture in the extension and choose <strong>Sign in</strong> or <strong>Check now</strong>.`,
         ...(next ? [`Your next billing date is ${next}. Dodo Payments sends your receipt separately.`] : []),
       ],
       { label: "Read the getting-started guide", href: `${site.url}/docs/getting-started` },
