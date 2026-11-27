@@ -44,7 +44,11 @@ export default function RefundPolicyPage() {
 
       <h2>4. How to cancel</h2>
       <ul>
-        <li>Click “Manage subscription” in your Dodo Payments receipt email, or</li>
+        <li>
+          Sign in and open <Link href="/account">Account &amp; billing</Link>, then click <strong>Cancel subscription</strong>,
+          or
+        </li>
+        <li>click “Manage subscription” in your Dodo Payments receipt email, or</li>
         <li>email {mail} and we will cancel it for you.</li>
       </ul>
       <p>

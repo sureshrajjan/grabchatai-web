@@ -118,7 +118,7 @@ export const emails = {
     return build(c.email, `Action needed: payment for ${site.name} Pro failed`, [
       greeting(c),
       `We couldn't process the latest payment for your ${escapeHtml(site.name)} Pro subscription, so it's on hold.`,
-      `Please update your payment method using the link in your Dodo Payments receipt email, or reply to this email and we'll help.`,
-    ]);
+      `Please update your payment method from your account page, or reply to this email and we'll help.`,
+    ], { label: "Update payment method", href: `${site.url}/account` });
   },
 };

@@ -216,8 +216,11 @@ export const docs: Doc[] = [
         </p>
         <h2>Manage or cancel</h2>
         <p>
-          Use the “Manage subscription” link in your Dodo Payments receipt, or contact support. See the{" "}
-          <Link href="/refund-policy">Refund Policy</Link>.
+          Sign in on grabchatai.com and open <Link href="/account">Account &amp; billing</Link> (from your profile picture).
+          There you can cancel your subscription, resume it before it ends, and open invoices or change your payment
+          method. After cancelling you won&apos;t be charged again, and Pro stays active until the end of the period you
+          paid for. You can also use the “Manage subscription” link in your Dodo Payments receipt, or contact support.
+          See the <Link href="/refund-policy">Refund Policy</Link>.
         </p>
       </>
     ),

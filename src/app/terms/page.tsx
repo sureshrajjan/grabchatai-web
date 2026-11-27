@@ -59,7 +59,7 @@ export default function TermsPage() {
       <ul>
         <li>Prices are in USD; applicable taxes (VAT, GST, sales tax) are calculated at checkout.</li>
         <li><strong>Subscriptions renew automatically</strong> at the end of each monthly or yearly period, at the then-current price, until cancelled.</li>
-        <li>You may cancel anytime. Cancellation stops future renewals; Pro remains active until the end of the paid period.</li>
+        <li>You may cancel anytime from <Link href="/account">Account &amp; billing</Link>. Cancellation stops future renewals; Pro remains active until the end of the paid period.</li>
         <li>We will give at least 30 days&apos; email notice before a price increase applies to an existing subscription.</li>
         <li>If a payment fails, Pro features may be paused until payment succeeds.</li>
       </ul>

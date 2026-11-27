@@ -92,6 +92,14 @@ export function AccountMenu() {
             Upgrade to Pro
             <span aria-hidden="true">↗</span>
           </Link>
+          <Link
+            href="/account"
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="mt-1 block rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+          >
+            Account & billing
+          </Link>
           <button
             type="button"
             role="menuitem"

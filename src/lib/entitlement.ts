@@ -14,7 +14,7 @@ type PaidPlan = Exclude<PlanId, "free">;
 /** The fields we read; both subscriptions.retrieve and subscriptions.list return them. */
 type Subscription = Pick<
   DodoPayments.Subscriptions.Subscription,
-  "subscription_id" | "status" | "product_id" | "next_billing_date" | "metadata"
+  "subscription_id" | "status" | "product_id" | "next_billing_date" | "metadata" | "cancel_at_next_billing_date" | "customer"
 >;
 type SubscriptionStatus = Subscription["status"];
 
@@ -23,6 +23,10 @@ export type SubscriptionRecord = {
   plan: PaidPlan | "unknown";
   /** End of the paid period (Dodo next_billing_date). */
   periodEnd: string | null;
+  /** Active, but set to end at periodEnd instead of renewing. */
+  cancelAtPeriodEnd?: boolean;
+  /** Dodo customer ID, used to open the customer portal. */
+  customerId?: string;
   /** Set when the payment was fully refunded — access is removed regardless of status. */
   revoked?: boolean;
   updatedAt: string;
@@ -59,6 +63,8 @@ function toRecord(sub: Subscription, revoked?: boolean): SubscriptionRecord {
     status: sub.status,
     plan: planFor(sub.product_id),
     periodEnd: sub.next_billing_date ?? null,
+    cancelAtPeriodEnd: Boolean(sub.cancel_at_next_billing_date),
+    ...(sub.customer?.customer_id ? { customerId: sub.customer.customer_id } : {}),
     ...(revoked ? { revoked: true } : {}),
     updatedAt: new Date().toISOString(),
   };
@@ -84,9 +90,14 @@ export function computeEntitlement(meta: DodoMetadata | undefined, now = Date.no
     pro: true,
     plan: best.plan === "unknown" ? "pro_monthly" : best.plan,
     until: best.periodEnd,
-    cancelled: !granting.some((r) => r.status === "active"),
+    cancelled: !granting.some(renews),
     checkedAt,
   };
+}
+
+/** Will this subscription charge again at periodEnd? */
+function renews(rec: SubscriptionRecord) {
+  return rec.status === "active" && !rec.cancelAtPeriodEnd && !rec.revoked;
 }
 
 // ---------- Clerk storage ----------
@@ -212,4 +223,52 @@ export async function getEntitlement(userId: string, opts: { forceSync?: boolean
     console.error("[entitlement] Dodo sync failed, using stored state", err);
     return computeEntitlement(meta);
   }
+}
+
+// ---------- customer actions (account page) ----------
+
+/** Statuses with an unpaid or paused period: cancelling ends them now, since there's no paid time left to keep. */
+const UNPAID: SubscriptionStatus[] = ["on_hold", "past_due", "paused"];
+
+/**
+ * Cancel (renew = false) or resume (renew = true) the signed-in user's subscriptions.
+ * Cancelling an active subscription keeps Pro until the end of the paid period.
+ * Only subscriptions stored on this user's own Clerk account are touched.
+ * Returns how many subscriptions were changed.
+ */
+export async function setRenewal(userId: string, renew: boolean): Promise<number> {
+  const { meta, email } = await readDodoMetadata(userId);
+  // Re-read from Dodo first so we act on the current state.
+  const fresh = await syncAllFromDodo(userId, email, meta);
+  const client = getDodoClient();
+  let changed = 0;
+
+  for (const [id, rec] of Object.entries(fresh.subscriptions ?? {})) {
+    if (rec.revoked) continue;
+    if (renew) {
+      if (rec.status !== "active" || !rec.cancelAtPeriodEnd) continue;
+      await client.subscriptions.update(id, { cancel_at_next_billing_date: false });
+    } else if (rec.status === "active") {
+      if (rec.cancelAtPeriodEnd) continue;
+      await client.subscriptions.update(id, { cancel_at_next_billing_date: true, cancel_reason: "cancelled_by_customer" });
+    } else if (UNPAID.includes(rec.status)) {
+      await client.subscriptions.update(id, { status: "cancelled", cancel_reason: "cancelled_by_customer" });
+    } else {
+      continue;
+    }
+    await syncSubscription(userId, id);
+    changed++;
+  }
+  return changed;
+}
+
+/** A one-time Dodo customer-portal link (invoices, payment method, cancel), or null if the user never bought. */
+export async function getPortalLink(userId: string, returnUrl: string): Promise<string | null> {
+  const { meta, email } = await readDodoMetadata(userId);
+  const find = (m: DodoMetadata) => Object.values(m.subscriptions ?? {}).find((r) => r.customerId)?.customerId;
+  // Records saved before customerId was stored need one sync.
+  const customerId = find(meta) ?? find(await syncAllFromDodo(userId, email, meta));
+  if (!customerId) return null;
+  const session = await getDodoClient().customers.customerPortal.create(customerId, { return_url: returnUrl });
+  return session.link;
 }

@@ -23,7 +23,7 @@ export const site = {
     jurisdictionCity: "Chennai",
   },
 
-  legalLastUpdated: "November 21, 2026",
+  legalLastUpdated: "November 27, 2026",
   copyrightYear: 2026,
   refundWindowDays: 7,
 } as const;

@@ -87,7 +87,8 @@ export const faqBilling: QA[] = [
     q: "How do I cancel or manage my subscription?",
     a: (
       <>
-        Use the “Manage subscription” link in your receipt email from Dodo Payments, or email{" "}
+        Sign in and go to <Link href="/account" className={a}>Account &amp; billing</Link> to cancel, resume, or see
+        invoices. You can also use the “Manage subscription” link in your Dodo Payments receipt, or email{" "}
         <a href={`mailto:${site.supportEmail}`} className={a}>{site.supportEmail}</a>. You keep Pro until the end of
         the period you paid for.
       </>
